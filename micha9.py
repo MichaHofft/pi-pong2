@@ -238,7 +238,7 @@ class Aktor:
     def Ticke(self):
 
         # neue Richtung einschlagen?
-        nr = self.CheckNeueRichtung()
+        (nr, ng) = self.CheckNeueRichtung()
         if nr >= 0 and nr != self.Richtung:
             
             # tricky: Wechsel von X auf Y oder umgekehrt
@@ -277,7 +277,7 @@ class Aktor:
                 self.Richtung = nr
 
             # statte Pacman wieder mit Geschwindigkeit aus
-            self.Geschwind = 1.0
+            self.Geschwind = ng
 
         # (alte) Richtung fortschreiben
         self.Ticks = (self.Ticks + 1) % 50
@@ -334,9 +334,10 @@ class Aktor:
         pass
 
     """ Checkt an jedem kleinen Pixel-Schritt, ob eine NEUE Richtung eingeschlagen werden soll.
-        Gibt sonst -1 zurueck """
+        Gibt auch die Geschwindigkeit rerück
+        Gibt sonst (-1, 1.0) zurueck """
     def CheckNeueRichtung(self):
-        return -1
+        return (-1, 1.0)
 
 
 class AktorPacman(Aktor):
@@ -344,6 +345,7 @@ class AktorPacman(Aktor):
     def __init__(self, spiel : TestSpielBasis, zeile, spalte, richt):
         # normaler Aktor
         super().__init__(spiel, zeile, spalte, richt)
+        self.NormGeschwind = 2.0
 
     def Male(self, spiel : TestSpielBasis):
         bild = spiel.PacmanBilder[2 * self.Richtung + (1 if self.Blink else 0)]
@@ -353,31 +355,6 @@ class AktorPacman(Aktor):
     """ Laeuft in eine Richtung undstoppt wenn es nicht weitergeht """
     def SchrittGetan(self):
         
-        # if keyboard.is_pressed('a'):
-        #     self.Richtung = self.RICHT_LINKS
-
-        # if keyboard.is_pressed('d'):
-        #     self.Richtung = self.RICHT_RECHTS
-
-        # if keyboard.is_pressed('w'):
-        #     self.Richtung = self.RICHT_OBEN
-
-        # if keyboard.is_pressed('s'):
-        #     self.Richtung = self.RICHTws_UNTEN
-
-        # self.Geschwind = 1.0
-        # if self.Spiel.Lotsen[0].Links:
-        #     self.Richtung = self.RICHT_LINKS
-
-        # if self.Spiel.Lotsen[0].Rechts:
-        #     self.Richtung = self.RICHT_RECHTS
-
-        # if self.Spiel.Lotsen[0].Oben:
-        #     self.Richtung = self.RICHT_OBEN
-
-        # if self.Spiel.Lotsen[0].Unten:
-        #     self.Richtung = self.RICHT_UNTEN
-
         kolls = self.TestKollisionen()
         if self.Richtung in kolls:
             self.Geschwind = 0.0
@@ -385,18 +362,18 @@ class AktorPacman(Aktor):
     def CheckNeueRichtung(self):
 
         if self.Spiel.Lotsen[0].Links:
-            return self.RICHT_LINKS
+            return (self.RICHT_LINKS, self.NormGeschwind)
 
         if self.Spiel.Lotsen[0].Rechts:
-            return self.RICHT_RECHTS
+            return (self.RICHT_RECHTS, self.NormGeschwind)
 
         if self.Spiel.Lotsen[0].Oben:
-            return self.RICHT_OBEN
+            return (self.RICHT_OBEN, self.NormGeschwind)
 
         if self.Spiel.Lotsen[0].Unten:
-            return self.RICHT_UNTEN
+            return (self.RICHT_UNTEN, self.NormGeschwind)
 
-        return -1
+        return (-1, 1.0)
 
 
 class AktorGeist(Aktor):
@@ -430,42 +407,6 @@ class AktorGeist(Aktor):
         bild = spiel.GeistBilder[2 * self.Rolle + (1 if self.Angst else 0)]
         xs, ys = self.PixelPos()
         spiel.MaleSprite(xs, ys, bild)
-
-    """ Laeuft selbststaendig hin und her und nimmt Abzweigungen """
-    def SchrittGetanOLD(self):
-
-        versuche = 0
-        while True:
-
-            # kommen wir an einem Abzweig vorbei?
-            # wir koennen jede Richtung nehmen, die NICHT rueckwarts fuehrt
-            kolls = self.TestKollisionen()
-            for r in self.Richts:
-                if r in kolls:
-                    continue
-                if r == self.AntiRicht[self.Richtung]:
-                    continue
-                if random.random() > 0.5:
-                    # OK, Abnzweig nehmen
-                    self.Richtung = r
-                    break
-
-            # ansonsten: ist unsere Richtung (immer noch) gut?
-            if not self.Richtung in kolls:
-                break
-            
-            # probieren wir ne andere Richtung
-            # self.Richtung = (self.Richtung + 1) % 4
-            self.Richtung = random.randint(0,3)
-
-            # das machen wir ein paar mal, bis wir die Reissleine ziehen
-            versuche += 1
-            if versuche > 9:
-                self.Geschwind = 0.0
-                break
-
-        # hoffentlich fein ..
-        pass
 
     """ Euklidische Distanz """
     def Distanz(self, z1, s1, z2, s2):

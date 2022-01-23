@@ -312,10 +312,11 @@ class SpielBasis(SampleBase):
     def SeriellLeseLotsen(self):
 
         l1 = Lotse()
-        l2 = Lotse()        
+        l2 = Lotse()   
+        sw = ""     
 
         if self.Seriell is None:
-            return (l1, l2)
+            return (l1, l2, sw)
     
         while True:
             # hole neue Daten
